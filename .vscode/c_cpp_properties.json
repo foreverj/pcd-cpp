@@ -7,7 +7,8 @@
                 "/usr/local/include/pcl-1.8/**",
                 "/usr/local/Cellar/pcl/1.8.1_3/include/pcl-1.8",
                 "/usr/local/Cellar/eigen/3.3.4/include/eigen3",
-                "/usr/local/Cellar/vtk/8.1.1/include/vtk-8.1"
+                "/usr/local/Cellar/vtk/8.1.1/include/vtk-8.1",
+                "/usr/local/Cellar/cgal/4.12.1/include/CGAL"
             ],
             "defines": [],
             "macFrameworkPath": [
