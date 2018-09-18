@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/local/include/pcl-1.8/**",
+                "/usr/local/Cellar/pcl/1.8.1_3/include/pcl-1.8",
+                "/usr/local/Cellar/eigen/3.3.4/include/eigen3",
+                "/usr/local/Cellar/vtk/8.1.1/include/vtk-8.1"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64",
+            "configurationProvider": "vector-of-bool.cmake-tools"
+        }
+    ],
+    "version": 4
+}
