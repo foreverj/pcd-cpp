@@ -51,7 +51,7 @@ bool file_input(OutputIterator out)
     int n;
     is >> n;
     std::cout<<"Reading "<<n<<" points from file"<<std::endl;
-    CGAL::cpp11::copy_n(std::istream_iterator<Point>(is),n,out)
+    CGAL::cpp11::copy_n(std::istream_iterator<Point>(is),n,out);
     return true;
 }
 
@@ -63,7 +63,7 @@ int main()
         return -1;
     }
 
-    Alpha_shape_2 A(points.begin(),points.end(),FT(10000),Akpha_shape_2::GENERAL);
+    Alpha_shape_2 A(points.begin(),points.end(),FT(10000),Alpha_shape_2::GENERAL);
 
     std::vector<Segment> segments;
     alpha_edges(A,std::back_inserter(segments));

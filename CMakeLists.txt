@@ -1,6 +1,7 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 project(PCL_CPP_TEST)
+add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>")
 
 find_package(PCL 1.5 REQUIRED)
 
