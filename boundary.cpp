@@ -1,3 +1,5 @@
+#include "boundary.h"
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/Alpha_shape_2.h>
@@ -55,12 +57,12 @@ bool file_input(OutputIterator out)
     return true;
 }
 
-int main()
+void BoundaryProcessor::processData()
 {
     std::list<Point> points;
     if(! file_input(std::back_inserter(points)))
     {
-        return -1;
+        std::cerr<<"Unable to read points"<<std::endl;
     }
 
     Alpha_shape_2 A(points.begin(),points.end(),FT(10000),Alpha_shape_2::GENERAL);
@@ -71,5 +73,4 @@ int main()
     std::cout << "Alpha shape computed"<<std::endl;
     std::cout << segments.size() <<" alpha shape edges" << std::endl;
     std::cout << "Optimal alpha: "<< *A.find_optimal_alpha(1) << std::endl;
-    return 0;
 }

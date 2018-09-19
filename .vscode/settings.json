@@ -21,6 +21,7 @@
         "variant": "cpp",
         "fstream": "cpp",
         "locale": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "__locale": "cpp"
     }
 }

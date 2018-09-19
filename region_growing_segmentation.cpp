@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 
+#include "boundary.h"
+
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
@@ -120,6 +122,9 @@ void projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_c
 
 int main (int argc, char** argv)
 {
+  //Test Static Library Linkage
+  BoundaryProcessor::processData();
+
   int counter = 0;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   if ( pcl::io::loadPCDFile <pcl::PointXYZ> ("region_growing_tutorial.pcd", *cloud) == -1)
