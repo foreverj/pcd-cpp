@@ -115,6 +115,17 @@ void projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_c
     proj.setModelCoefficients (cluster_coefficients[counter]);
     proj.filter (*cloud_projected);
     pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_projected.ply",*cloud_projected,false);
+
+    //Push Data to CGAL Boundary Paramatrization
+    BoundaryProcessor bp(*cloud_projected,*cluster_coefficients[counter]);
+    if(counter == 0)
+    {
+      bp.processData("cluster0_edges.csv");
+    }else{
+      bp.processData();
+    }
+    
+
     counter++;
   }
   std::cout<<"Cluster Projection ... Done"<<std::endl;
@@ -123,7 +134,7 @@ void projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_c
 int main (int argc, char** argv)
 {
   //Test Static Library Linkage
-  BoundaryProcessor::processData();
+  // BoundaryProcessor::processData();
 
   int counter = 0;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
@@ -255,6 +266,8 @@ int main (int argc, char** argv)
   //Save the cluster coefficients
   saveCoefficients("coefficients.csv",cluster_coefficients);
   projectPointsAndSavePly(cluster_coefficients,cloud,clusters);
+
+ 
 
   //Launch the viewer to show segmentation results if in DEBUG mode
   #ifdef DEBUG

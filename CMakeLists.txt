@@ -14,13 +14,14 @@ target_link_libraries(pcd_write_test ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES}
 
 #CGAL support
 add_library(CGAL STATIC IMPORTED COMPONENTS Core)
-find_package(CGAL QUIET COMPONENTS Core)
+find_package(CGAL QUIET COMPONENTS Core 4.12 REQUIRED)
 
 if(CGAL_FOUND)
     include(${CGAL_USE_FILE})
     include(CGAL_CreateSingleSourceCGALProgram)
 
     add_library(BoundaryLib STATIC boundary.cpp)
+    target_link_libraries(BoundaryLib ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
     #create_single_source_cgal_program("boundary.cpp")
 else()
 message(STATUS "This program requires the CGAL library, and will not be compiled.")
