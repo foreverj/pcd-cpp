@@ -1,4 +1,4 @@
-#include "boundary.h"
+#include "boundary.hpp"
 #include <pcl/io/ply_io.h>
 #include <pcl/common/transforms.h>
 
@@ -125,10 +125,12 @@ bool BoundaryProcessor::pointCloudInput(pcl::PointCloud<pcl::PointXYZ> cloud_pro
         original.z = b1->z;
         pcl::PointXYZ transformed_point;
         transformed_point = threeDtoTwoD(original);
+        #ifdef DEBUG
         if (i<10){
             std::cout<<transformed_point.x<<" "<<transformed_point.y<<" "<<transformed_point.z<<std::endl;
             i++;
         }
+        #endif
         
         out_string<<std::to_string(transformed_point.x) <<" "<<std::to_string(transformed_point.y)<<std::endl;
     }

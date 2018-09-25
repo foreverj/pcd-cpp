@@ -30,5 +30,11 @@ endif()
 #add_executable (boundary_test boundary_test.cpp)
 #target_link_libraries (boundary_test ${PCL_LIBRARIES} ${PCL_IO_LIBRARIES} BoundaryLib)
 
-add_executable (region_growing_segmentation region_growing_segmentation.cpp)
-target_link_libraries (region_growing_segmentation ${PCL_LIBRARIES} ${PCL_IO_LIBRARIES} BoundaryLib)
+#add_executable (region_growing_segmentation region_growing_segmentation.cpp)
+#target_link_libraries (region_growing_segmentation ${PCL_LIBRARIES} ${PCL_IO_LIBRARIES} BoundaryLib)
+
+add_library(SegmentorLib STATIC segmentor.cpp)
+target_link_libraries (SegmentorLib ${PCL_LIBRARIES} ${PCL_IO_LIBRARIES} BoundaryLib)
+
+add_executable (segmentor_test segmentor_test.cpp)
+target_link_libraries (segmentor_test ${PCL_LIBRARIES} ${PCL_IO_LIBRARIES} SegmentorLib)

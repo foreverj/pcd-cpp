@@ -1,30 +1,5 @@
-#include <fstream>
-#include <iostream>
-#include <vector>
-
+#include "segmentor.hpp"
 #include "boundary.hpp"
-
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/ply_io.h>
-#include <pcl/search/search.h>
-#include <pcl/search/kdtree.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/segmentation/region_growing.h>
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/project_inliers.h>
-
-#ifdef DEBUG
-
-#include <pcl/visualization/pcl_visualizer.h>
-
-#endif
 
 void printProgressBar(std::string label, int step, int total){
 
@@ -55,7 +30,7 @@ void printProgressBar(std::string label, int step, int total){
   }
 }
 
-void extractPointCloudsFromCoefficients(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,pcl::PointCloud<pcl::PointXYZ> &cluster_cloud,pcl::PointIndices::Ptr cluster)
+void Segmentor::extractPointCloudsFromCoefficients(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,pcl::PointCloud<pcl::PointXYZ> &cluster_cloud,pcl::PointIndices::Ptr cluster)
 {
     pcl::ExtractIndices<pcl::PointXYZ> extract;
 
@@ -87,7 +62,7 @@ void saveCoefficients(std::string filename,std::vector <pcl::ModelCoefficients::
   out.close();
 }
 
-void projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_coefficients, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,std::vector <pcl::PointIndices> clusters)
+void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_coefficients, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,std::vector <pcl::PointIndices> clusters)
 {
   int counter=0;
   const int numberOfClusters = cluster_coefficients.size();
@@ -133,83 +108,65 @@ void projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_c
   std::cout<<"Cluster Projection ... Done"<<std::endl;
 }
 
-int main (int argc, char** argv)
+Segmentor::Segmentor(std::string filename)
 {
-  //Test Static Library Linkage
-  // BoundaryProcessor::processData();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+    if ( pcl::io::loadPCDFile <pcl::PointXYZ> (filename, *cloud) == -1)
+    {
+        throw std::invalid_argument( "Cloud reading failed" );
+    }
+    this->cloud = cloud;
+}
+
+pcl::PointCloud <pcl::PointXYZRGB>::Ptr Segmentor::coloredCloud()
+{
+      pcl::PointCloud <pcl::PointXYZRGB>::Ptr colored_cloud = this->reg.getColoredCloud ();
+      return colored_cloud;
+}
+
+
+int Segmentor::segment ()
+{
 
   int counter = 0;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-  if ( pcl::io::loadPCDFile <pcl::PointXYZ> ("region_growing_tutorial.pcd", *cloud) == -1)
-  {
-    std::cout << "Cloud reading failed." << std::endl;
-    return (-1);
-  }
+  
 
   pcl::search::Search<pcl::PointXYZ>::Ptr tree = boost::shared_ptr<pcl::search::Search<pcl::PointXYZ> > (new pcl::search::KdTree<pcl::PointXYZ>);
   pcl::PointCloud <pcl::Normal>::Ptr normals (new pcl::PointCloud <pcl::Normal>);
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;
   normal_estimator.setSearchMethod (tree);
-  normal_estimator.setInputCloud (cloud);
+  normal_estimator.setInputCloud (this->cloud);
   normal_estimator.setKSearch (50);
   normal_estimator.compute (*normals);
 
   pcl::IndicesPtr indices (new std::vector <int>);
   pcl::PassThrough<pcl::PointXYZ> pass;
-  pass.setInputCloud (cloud);
+  pass.setInputCloud (this->cloud);
   pass.setFilterFieldName ("z");
   pass.setFilterLimits (0.0, 1.0);
   pass.filter (*indices);
 
-  pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
-  reg.setMinClusterSize (50);
-  reg.setMaxClusterSize (1000000);
-  reg.setSearchMethod (tree);
-  reg.setNumberOfNeighbours (30);
-  reg.setInputCloud (cloud);
-  //reg.setIndices (indices);
-  reg.setInputNormals (normals);
-  reg.setSmoothnessThreshold (3.0 / 180.0 * M_PI);
-  reg.setCurvatureThreshold (1.0);
+  this->reg.setMinClusterSize (50);
+  this->reg.setMaxClusterSize (1000000);
+  this->reg.setSearchMethod (tree);
+  this->reg.setNumberOfNeighbours (30);
+  this->reg.setInputCloud (cloud);
+  this->reg.setInputNormals (normals);
+  this->reg.setSmoothnessThreshold (3.0 / 180.0 * M_PI);
+  this->reg.setCurvatureThreshold (1.0);
 
-  std::vector <pcl::PointIndices> clusters;
-  reg.extract (clusters);
-
-  std::cout << "Number of clusters is equal to " << clusters.size () << std::endl;
-  
-  #ifdef DEBUG
-  std::cout << "First cluster has " << clusters[0].indices.size () << " points." << std::endl;
-  std::cout << "These are the indices of the points of the initial" <<
-    std::endl << "cloud that belong to the first cluster:" << std::endl;
-  while (counter < clusters[0].indices.size ())
-  {
-    std::cout << clusters[0].indices[counter] << ", ";
-    counter++;
-    if (counter % 10 == 0)
-      std::cout << std::endl;
-  }
-  std::cout << std::endl;
-  #endif
-
-  pcl::PointCloud <pcl::PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud ();
-  pcl::io::savePCDFile("colored_cloud.pcd",*colored_cloud);
-  pcl::io::savePLYFile("colored_cloud.ply",*colored_cloud,false);
+  this->reg.extract (this->clusters);
 
   //Fit plane equations to each cluster using RANSAC
   counter = 0;
 
-  std::vector <pcl::ModelCoefficients::Ptr> cluster_coefficients;
-  cluster_coefficients.resize(clusters.size());
+  this->cluster_coefficients.resize(clusters.size());
 
   int numberOfClusters = clusters.size();
   while(counter<numberOfClusters)
   {
     
-    #ifdef DEBUG
-    std::cout <<"Start processing cluster " << counter <<std::endl;
-    #else
     printProgressBar("Plane Fitting",counter+1,numberOfClusters);
-    #endif
 
     //Cluster point cloud extraction variables
     pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_cloud (new pcl::PointCloud<pcl::PointXYZ>);
@@ -224,11 +181,6 @@ int main (int argc, char** argv)
     }
 
     extractPointCloudsFromCoefficients(cloud,*cluster_cloud,cluster);
-    
-
-    #ifdef DEBUG
-    pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+".ply",*cluster_cloud,false);
-    #endif
 
     //SAC segmentation variables
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
@@ -250,40 +202,16 @@ int main (int argc, char** argv)
       return (-1);
     }
 
-    #ifdef DEBUG 
-    std::cout <<"inliers size " << inliers->indices.size () <<std::endl;
-    std::cerr << "Model coefficients: " << coefficients->values[0] << " " 
-                                      << coefficients->values[1] << " "
-                                      << coefficients->values[2] << " " 
-                                      << coefficients->values[3] << std::endl;
-    
-    #endif
     //Buffer the coefficients
-    cluster_coefficients[counter]=coefficients;
+    this->cluster_coefficients[counter]=coefficients;
 
     counter++;
   }
   std::cout<<"Plane Fitting ... Done"<<std::endl;
   
-  //Save the cluster coefficients
-  saveCoefficients("coefficients.csv",cluster_coefficients);
-  projectPointsAndSavePly(cluster_coefficients,cloud,clusters);
-
- 
-
-  //Launch the viewer to show segmentation results if in DEBUG mode
-  #ifdef DEBUG
+  projectPointsAndSavePly(this->cluster_coefficients,this->cloud,this->clusters);
   
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("Cluster viewer"));
-  pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(colored_cloud); 
-  viewer->setBackgroundColor (0,0,0);
-  viewer->addPointCloud(colored_cloud,rgb,"sample cloud");
-  while (!viewer->wasStopped ())
-  {
-    viewer->spinOnce(100);
-  }
-
-  #endif
-
-  return (0);
+  return clusters.size();
+  
 }
+
