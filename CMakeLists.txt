@@ -9,8 +9,8 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable(pcd_write_test pcd_write.cpp)
-target_link_libraries(pcd_write_test ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
+#add_executable(pcd_write_test pcd_write.cpp)
+#target_link_libraries(pcd_write_test ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
 
 #CGAL support
 add_library(CGAL STATIC IMPORTED COMPONENTS Core)
@@ -26,6 +26,9 @@ if(CGAL_FOUND)
 else()
 message(STATUS "This program requires the CGAL library, and will not be compiled.")
 endif()
+
+#add_executable (boundary_test boundary_test.cpp)
+#target_link_libraries (boundary_test ${PCL_LIBRARIES} ${PCL_IO_LIBRARIES} BoundaryLib)
 
 add_executable (region_growing_segmentation region_growing_segmentation.cpp)
 target_link_libraries (region_growing_segmentation ${PCL_LIBRARIES} ${PCL_IO_LIBRARIES} BoundaryLib)

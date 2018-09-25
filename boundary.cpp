@@ -1,11 +1,42 @@
 #include "boundary.h"
+#include <pcl/io/ply_io.h>
+#include <pcl/common/transforms.h>
 
-void BoundaryProcessor::saveEdges(std::string filename,std::vector<Segment> segments)
+void BoundaryProcessor::processEdges()
+{
+    std::vector<Segment> segments = _converted_edges;
+    int counter=0;
+    const int numberOfSegments = segments.size();
+    //std::vector<pcl::PointXYZ> converted_points (new pcl::PointXYZ);
+    this->converted_points.resize(2*numberOfSegments);
+    while(counter<numberOfSegments)
+  {
+    
+    for(int j=0;j<2;j++)
+    {
+        pcl::PointXYZ vertex;
+        vertex.x = segments[counter].vertex(j).x();
+        vertex.y = segments[counter].vertex(j).y();
+        vertex.z = 0.0;
+        pcl::PointXYZ cp = twoDtoThreeD(vertex);
+        this->converted_points.push_back(cp);
+    }
+
+    counter++;
+  }
+}
+void BoundaryProcessor::saveConvertedPoints(std::string filename)
+{
+    pcl::io::savePLYFile("data/"+filename,this->converted_points,false);
+}
+
+
+void BoundaryProcessor::saveEdges(std::string filename)
 {
   std::string header="edge number,x1,y1,x2,y2\n";
   std::ofstream out(filename);
   out << header;
-
+  std::vector<Segment> segments = _converted_edges;
   int counter=0;
   const int numberOfSegments = segments.size();
   while(counter<numberOfSegments)
@@ -15,23 +46,6 @@ void BoundaryProcessor::saveEdges(std::string filename,std::vector<Segment> segm
                 <<segments[counter].vertex(0).y()<<","
                 <<segments[counter].vertex(1).x()<<","
                 <<segments[counter].vertex(1).y()<<"\n";
-    counter++;
-  }
-  out.close();
-}
-
-void BoundaryProcessor::saveEdges(std::string filename,std::vector<Point> vertices)
-{
-  std::string header="x,y";
-  std::ofstream out(filename);
-  out << header;
-
-  int counter=0;
-  const int numberOfSegments = vertices.size();
-  while(counter<numberOfSegments)
-  {
-    out<<""<<vertices[counter].x()<<","
-        <<vertices[counter].y()<<"\n";
     counter++;
   }
   out.close();
@@ -68,26 +82,29 @@ bool BoundaryProcessor::file_input(OutputIterator out)
 }
 
 
-pcl::PointXYZ BoundaryProcessor::threeDtoTwoD(pcl::PointXYZ original)
+pcl::PointXYZ BoundaryProcessor::twoDtoThreeD(pcl::PointXYZ original)
 {
     
     // Rotation Matrix
     pcl::PointXYZ result;
-    result.x = this->_x_prime.x*original.x + this->_y_prime.x*original.y + this->_z_prime.x*original.z;
-    result.y = this->_x_prime.y*original.x + this->_y_prime.y*original.y + this->_z_prime.y*original.z;
-    result.z = this->_x_prime.z*original.x + this->_y_prime.z*original.y + this->_z_prime.z*original.z;
+    result.x = this->_x_prime.x*original.x + this->_y_prime.x*original.y + this->_z_prime.x*original.z + this->_centroid.x;
+    result.y = this->_x_prime.y*original.x + this->_y_prime.y*original.y + this->_z_prime.y*original.z + this->_centroid.y;
+    result.z = this->_x_prime.z*original.x + this->_y_prime.z*original.y + this->_z_prime.z*original.z + this->_centroid.z;
 
     return result;
 }
 
-pcl::PointXYZ BoundaryProcessor::twoDtoThreeD(pcl::PointXYZ original)
+pcl::PointXYZ BoundaryProcessor::threeDtoTwoD(pcl::PointXYZ original)
 {
-
+    pcl::PointXYZ pointMoveToOrigin;
+    pointMoveToOrigin.x = original.x - this->_centroid.x;
+    pointMoveToOrigin.y = original.y - this->_centroid.y;
+    pointMoveToOrigin.z = original.z - this->_centroid.z;
     // Rotation Matrix
     pcl::PointXYZ result;
-    result.x = _x_prime.x*original.x + _x_prime.y*original.y + _x_prime.z*original.z;
-    result.y = _y_prime.x*original.x + _y_prime.y*original.y + _y_prime.z*original.z;
-    result.z = _z_prime.x*original.x + _z_prime.y*original.y + _z_prime.z*original.z;
+    result.x = _x_prime.x*pointMoveToOrigin.x + _x_prime.y*pointMoveToOrigin.y + _x_prime.z*pointMoveToOrigin.z;
+    result.y = _y_prime.x*pointMoveToOrigin.x + _y_prime.y*pointMoveToOrigin.y + _y_prime.z*pointMoveToOrigin.z;
+    result.z = _z_prime.x*pointMoveToOrigin.x + _z_prime.y*pointMoveToOrigin.y + _z_prime.z*pointMoveToOrigin.z;
 
     return result;
 }
@@ -131,6 +148,9 @@ void BoundaryProcessor::alpha_compute_output(std::list<Point> points)
     std::vector<Segment> segments;
     alpha_edges(A,std::back_inserter(segments));
 
+    _converted_edges = segments;
+    processEdges();
+
 }
 
 void BoundaryProcessor::alpha_compute_output(std::list<Point> points, std::string filename)
@@ -142,8 +162,9 @@ void BoundaryProcessor::alpha_compute_output(std::list<Point> points, std::strin
 
     std::vector<Segment> segments;
     alpha_edges(A,std::back_inserter(segments));
-
-    saveEdges(filename,segments);
+    _converted_edges = segments;
+    processEdges();
+    saveEdges(filename);
 }
 
 void BoundaryProcessor::processData()
@@ -171,6 +192,11 @@ void BoundaryProcessor::processData(std::string filename)
 BoundaryProcessor::BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projection,pcl::ModelCoefficients coeff)
 {
     _cloud_projection = cloud_projection;
+    Eigen::Vector4f centroid;
+    pcl::compute3DCentroid(cloud_projection,centroid);
+    _centroid.x = centroid[0];
+    _centroid.y = centroid[1];
+    _centroid.z = centroid[2];
     _coeff = coeff;
     
     //define normal vector
@@ -188,7 +214,7 @@ BoundaryProcessor::BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projec
 
     //assume X' axis always has y=0
     pcl::PointXYZ x_prime;
-    x_prime.z = 1.0/((z_prime.z)/(z_prime.x)*(z_prime.z)/(z_prime.x)+1.0);
+    x_prime.z = sqrt(1.0/((z_prime.z)/(z_prime.x)*(z_prime.z)/(z_prime.x)+1.0));
     x_prime.y = 0;
     x_prime.x = -z_prime.z/z_prime.x*x_prime.z;
 

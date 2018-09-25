@@ -42,23 +42,26 @@ class BoundaryProcessor
         BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projection,pcl::ModelCoefficients coeff);
         void processData();
         void processData(std::string filename);
+        void saveConvertedPoints(std::string filename);
+        pcl::PointCloud<pcl::PointXYZ> converted_points;
 
     private:
         pcl::PointXYZ _x_prime;
         pcl::PointXYZ _y_prime;
         pcl::PointXYZ _z_prime;
+        pcl::PointXYZ _centroid;
         pcl::PointCloud<pcl::PointXYZ> _cloud_projection;
         pcl::ModelCoefficients _coeff;
         pcl::PointXYZ threeDtoTwoD(pcl::PointXYZ original);
         pcl::PointXYZ twoDtoThreeD(pcl::PointXYZ original);
+        std::vector<Segment> _converted_edges;
         template <class OutputIterator> bool pointCloudInput(pcl::PointCloud<pcl::PointXYZ> cloud_projection, pcl::ModelCoefficients coeff,OutputIterator out);
-        void saveEdges(std::string filename,std::vector<Segment> segments);
-        void saveEdges(std::string filename,std::vector<Point> vertices);
+        void saveEdges(std::string filename);
         template <class OutputIterator> void alpha_edges(const Alpha_shape_2& A, OutputIterator out);
         template <class OutputIterator> bool file_input(OutputIterator out);
         void alpha_compute_output(std::list<Point> points);
         void alpha_compute_output(std::list<Point> points, std::string filename);
-
+        void processEdges();
 };
 
 #endif

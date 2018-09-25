@@ -121,6 +121,8 @@ void projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_c
     if(counter == 0)
     {
       bp.processData("cluster0_edges.csv");
+      bp.saveConvertedPoints("cluster0_processed.ply");
+
     }else{
       bp.processData();
     }
