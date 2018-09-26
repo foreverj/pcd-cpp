@@ -93,15 +93,8 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
 
     //Push Data to CGAL Boundary Paramatrization
     BoundaryProcessor bp(*cloud_projected,*cluster_coefficients[counter]);
-    if(counter == 0)
-    {
-      bp.processData("cluster0_edges.csv");
-      bp.saveConvertedPoints("cluster0_processed.ply");
-
-    }else{
-      bp.processData();
-    }
-    
+    bp.processData();
+    bp.saveConvertedPoints("cluster"+std::to_string(counter)+"_edges.ply");
 
     counter++;
   }
@@ -111,10 +104,24 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
 Segmentor::Segmentor(std::string filename)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-    if ( pcl::io::loadPCDFile <pcl::PointXYZ> (filename, *cloud) == -1)
-    {
-        throw std::invalid_argument( "Cloud reading failed" );
+
+    std::string extension = filename.substr(filename.find_last_of(".") + 1);
+
+    if(extension == "pcd") {
+      if ( pcl::io::loadPCDFile <pcl::PointXYZ> (filename, *cloud) == -1)
+      {
+          throw std::invalid_argument( "Cloud reading failed" );
+      }
+    } else if(extension == "ply") {
+      if ( pcl::io::loadPLYFile <pcl::PointXYZ> (filename, *cloud) == -1)
+      {
+          throw std::invalid_argument( "Cloud reading failed" );
+      }
+    } else{
+      throw std::invalid_argument( "File format not supported" );
     }
+
+    
     this->cloud = cloud;
 }
 

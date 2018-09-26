@@ -18,6 +18,18 @@
             "MIMode": "lldb"
         },
         {
+            "name": "(lldb) thesis",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/thesis",
+            "args": ["region_growing_tutorial.pcd"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "lldb"
+        },
+        {
             "name": "(lldb) Boundary Test",
             "type": "cppdbg",
             "request": "launch",
