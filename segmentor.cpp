@@ -121,8 +121,16 @@ Segmentor::Segmentor(std::string filename)
       throw std::invalid_argument( "File format not supported" );
     }
 
+    // Noise Removal
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::RadiusOutlierRemoval<pcl::PointXYZ> rorfilter(true);
+    rorfilter.setInputCloud(cloud);
+    rorfilter.setRadiusSearch(0.1);
+    rorfilter.setMinNeighborsInRadius(3);
+    rorfilter.setNegative(false);
+    rorfilter.filter(*filtered_cloud);
     
-    this->cloud = cloud;
+    this->cloud = filtered_cloud;
 }
 
 pcl::PointCloud <pcl::PointXYZRGB>::Ptr Segmentor::coloredCloud()

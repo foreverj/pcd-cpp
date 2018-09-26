@@ -1,7 +1,7 @@
 #include "segmentor.hpp"
 #include "docopt/docopt.h"
 #include <iostream>
-// #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
@@ -24,16 +24,16 @@ int processingFile(std::string filename)
     Segmentor seg(filename);
     int numOfClusters = seg.segment();
 
-    // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("Cluster viewer"));
-    // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(seg.coloredCloud()); 
-    // viewer->setBackgroundColor (0,0,0);
-    // viewer->addPointCloud(seg.coloredCloud(),rgb,"sample cloud");
-    // pcl::io::savePLYFileBinary("data/segmentation_result.ply", *seg.coloredCloud());
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("Cluster viewer"));
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(seg.coloredCloud()); 
+    viewer->setBackgroundColor (0,0,0);
+    viewer->addPointCloud(seg.coloredCloud(),rgb,"sample cloud");
+    pcl::io::savePLYFileBinary("data/segmentation_result.ply", *seg.coloredCloud());
 
-    // while (!viewer->wasStopped ())
-    // {
-    //     viewer->spinOnce(100);
-    // }
+    while (!viewer->wasStopped ())
+    {
+        viewer->spinOnce(100);
+    }
 
     return 0;
 }

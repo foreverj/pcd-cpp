@@ -21,6 +21,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/project_inliers.h>
+#include <pcl/filters/radius_outlier_removal.h>
 
 
 
