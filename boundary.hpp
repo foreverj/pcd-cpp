@@ -39,10 +39,11 @@ typedef Alpha_shape_2::Alpha_shape_vertices_iterator        Alpha_shape_vertices
 class BoundaryProcessor
 {
     public:
-        BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projection,pcl::ModelCoefficients coeff);
+        BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projection,pcl::ModelCoefficients coeff,bool debug_mode=false);
         void processData();
         void processData(std::string filename);
         void saveConvertedPoints(std::string filename);
+        bool debug_mode;
         pcl::PointCloud<pcl::PointXYZ> converted_points;
 
     private:

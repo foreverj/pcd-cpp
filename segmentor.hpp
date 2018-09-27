@@ -27,16 +27,22 @@
 
 class Segmentor{
     public:
-        Segmentor(std::string filename);
+        Segmentor(std::string filename,float minimumArea=0.0f,int noiseThreshold = 0, bool debug_mode=false);
+        float minimumArea;
+        bool debug_mode;
         int segment ();
         pcl::PointCloud <pcl::PointXYZRGB>::Ptr coloredCloud();
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
+        std::vector <pcl::PointCloud<pcl::PointXYZRGB>::Ptr> filtered_clouds;
+        //std::vector <pcl::RGB> filtered_clouds_color_map;
         std::vector <pcl::ModelCoefficients::Ptr> cluster_coefficients;
         std::vector <pcl::PointIndices> clusters;
     private:
         pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
+        std::vector<pcl::RGB> color_map;
         void projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_coefficients, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,std::vector <pcl::PointIndices> clusters);
         void extractPointCloudsFromCoefficients(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,pcl::PointCloud<pcl::PointXYZ> &cluster_cloud,pcl::PointIndices::Ptr cluster);
+        float calculateAreaPolygon(const pcl::PointCloud<pcl::PointXYZ> &polygon);
 };
 
 #endif

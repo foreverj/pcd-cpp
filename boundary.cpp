@@ -125,12 +125,13 @@ bool BoundaryProcessor::pointCloudInput(pcl::PointCloud<pcl::PointXYZ> cloud_pro
         original.z = b1->z;
         pcl::PointXYZ transformed_point;
         transformed_point = threeDtoTwoD(original);
-        #ifdef DEBUG
-        if (i<10){
-            std::cout<<transformed_point.x<<" "<<transformed_point.y<<" "<<transformed_point.z<<std::endl;
-            i++;
+        if(this->debug_mode)
+        {
+            if (i<10){
+                std::cout<<transformed_point.x<<" "<<transformed_point.y<<" "<<transformed_point.z<<std::endl;
+                i++;
+            }
         }
-        #endif
         
         out_string<<std::to_string(transformed_point.x) <<" "<<std::to_string(transformed_point.y)<<std::endl;
     }
@@ -191,7 +192,7 @@ void BoundaryProcessor::processData(std::string filename)
     alpha_compute_output(points,filename);
 }
 
-BoundaryProcessor::BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projection,pcl::ModelCoefficients coeff)
+BoundaryProcessor::BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projection,pcl::ModelCoefficients coeff,bool debug_mode)
 {
     _cloud_projection = cloud_projection;
     Eigen::Vector4f centroid;
@@ -229,4 +230,6 @@ BoundaryProcessor::BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projec
     _x_prime = x_prime;
     _y_prime = y_prime;
     _z_prime = z_prime;
+
+    this->debug_mode = debug_mode;
 }

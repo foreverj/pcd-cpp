@@ -1,6 +1,25 @@
 #include "segmentor.hpp"
 #include "boundary.hpp"
 
+
+float Segmentor::calculateAreaPolygon(const pcl::PointCloud<pcl::PointXYZ> &polygon)
+{
+  float area = 0.0;
+  int num_points = polygon.size();
+  int j =0;
+  Eigen::Vector3f va,vb,res;
+  res(0)=res(1)=res(2)=0.0f;
+  for(int i = 0; i < num_points;++i)
+  {
+    j = (i+1)%num_points;
+    va = polygon[i].getVector3fMap();
+    vb = polygon[j].getVector3fMap();
+    res += va.cross(vb);
+  }
+  area = res.norm();
+  return area*0.5;
+}
+
 void printProgressBar(std::string label, int step, int total){
 
   //Progress width
@@ -89,19 +108,30 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
     proj.setInputCloud (cluster_cloud);
     proj.setModelCoefficients (cluster_coefficients[counter]);
     proj.filter (*cloud_projected);
-    pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_projected.ply",*cloud_projected,false);
 
     //Push Data to CGAL Boundary Paramatrization
     BoundaryProcessor bp(*cloud_projected,*cluster_coefficients[counter]);
     bp.processData();
-    bp.saveConvertedPoints("cluster"+std::to_string(counter)+"_edges.ply");
 
+    // Check if the cluster satifies the minimum area requirement
+    if (calculateAreaPolygon(bp.converted_points) >= this->minimumArea){
+      bp.saveConvertedPoints("cluster"+std::to_string(counter)+"_edges.ply");
+      pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_projected.ply",*cloud_projected,false);
+      pcl::PointCloud<pcl::PointXYZRGB >::Ptr ccloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+      pcl::copyPointCloud(*cluster_cloud,*ccloud);
+      this->filtered_clouds.push_back(ccloud);
+      for(int i = 0; i < ccloud->points.size();i++)
+      {
+        ccloud->points[i].rgb = this->color_map[counter].rgb;
+      }
+    }
+    
     counter++;
   }
   std::cout<<"Cluster Projection ... Done"<<std::endl;
 }
 
-Segmentor::Segmentor(std::string filename)
+Segmentor::Segmentor(std::string filename,float minimumArea,int noiseThreshold, bool debug_mode)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -126,11 +156,13 @@ Segmentor::Segmentor(std::string filename)
     pcl::RadiusOutlierRemoval<pcl::PointXYZ> rorfilter(true);
     rorfilter.setInputCloud(cloud);
     rorfilter.setRadiusSearch(0.1);
-    rorfilter.setMinNeighborsInRadius(3);
+    rorfilter.setMinNeighborsInRadius(noiseThreshold);
     rorfilter.setNegative(false);
     rorfilter.filter(*filtered_cloud);
     
     this->cloud = filtered_cloud;
+    this->minimumArea  = minimumArea;
+    this->debug_mode = debug_mode;
 }
 
 pcl::PointCloud <pcl::PointXYZRGB>::Ptr Segmentor::coloredCloud()
@@ -154,18 +186,19 @@ int Segmentor::segment ()
   normal_estimator.setKSearch (50);
   normal_estimator.compute (*normals);
 
-  pcl::IndicesPtr indices (new std::vector <int>);
-  pcl::PassThrough<pcl::PointXYZ> pass;
-  pass.setInputCloud (this->cloud);
-  pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0.0, 1.0);
-  pass.filter (*indices);
+  // pcl::IndicesPtr indices (new std::vector <int>);
+  // pcl::PassThrough<pcl::PointXYZ> pass;
+  // pass.setInputCloud (this->cloud);
+  // pass.setFilterFieldName ("z");
+  // pass.setFilterLimits (0.0, 1.0);
+  // pass.filter (*indices);
 
   this->reg.setMinClusterSize (50);
   this->reg.setMaxClusterSize (1000000);
   this->reg.setSearchMethod (tree);
   this->reg.setNumberOfNeighbours (30);
   this->reg.setInputCloud (cloud);
+  // this->reg.setIndices(indices);
   this->reg.setInputNormals (normals);
   this->reg.setSmoothnessThreshold (3.0 / 180.0 * M_PI);
   this->reg.setCurvatureThreshold (1.0);
@@ -176,12 +209,21 @@ int Segmentor::segment ()
   counter = 0;
 
   this->cluster_coefficients.resize(clusters.size());
+  this->color_map.resize(clusters.size());
+
+  pcl::PointCloud <pcl::PointXYZRGB>::Ptr colored_cloud = this->reg.getColoredCloud ();
+
 
   int numberOfClusters = clusters.size();
   while(counter<numberOfClusters)
   {
     
     printProgressBar("Plane Fitting",counter+1,numberOfClusters);
+
+    //Get and store color map for the cluster
+    color_map[counter].r = colored_cloud->points[clusters[counter].indices[0]].r;
+    color_map[counter].g = colored_cloud->points[clusters[counter].indices[0]].g;
+    color_map[counter].b = colored_cloud->points[clusters[counter].indices[0]].b;
 
     //Cluster point cloud extraction variables
     pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_cloud (new pcl::PointCloud<pcl::PointXYZ>);
@@ -206,7 +248,7 @@ int Segmentor::segment ()
     seg.setOptimizeCoefficients(true);
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setDistanceThreshold (1);
+    seg.setDistanceThreshold (0.2);
     seg.setInputCloud (cluster_cloud);
     seg.segment (*inliers, *coefficients);
 
