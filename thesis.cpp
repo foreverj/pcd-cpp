@@ -40,7 +40,16 @@ int main(int argc, const char** argv)
     float minimum_area = std::stof(args["--minimum_area"].asString());
     int minimum_number_of_neighbours = std::stoi(args["--minimum_number_of_neighbours"].asString());
 
-    Segmentor seg(filename,minimum_area,minimum_number_of_neighbours,debug_mode);
+
+    SegmentorOptions opt;
+    opt.DEBUG_MODE = debug_mode;
+    opt.MINIMUM_AREA = minimum_area;
+    opt.NOISE_THRESHOLD = minimum_number_of_neighbours;
+    opt.SAVE_CLUSTERS_OF_INTEREST = true;
+    opt.SAVE_EDGES_FOR_CLUSTERS_OF_INTEREST = true;
+    opt.SAVE_PROJECTED_CLUSTERS_OF_INTEREST = true;
+
+    Segmentor seg(filename,opt);
     int numOfClusters = seg.segment();
 
     if (display_mode)

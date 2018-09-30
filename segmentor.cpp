@@ -110,22 +110,26 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
     proj.filter (*cloud_projected);
 
     //Push Data to CGAL Boundary Paramatrization
-    BoundaryProcessor bp(*cloud_projected,*cluster_coefficients[counter]);
+    BoundaryProcessor bp(*cloud_projected,*cluster_coefficients[counter],this->options.DEBUG_MODE);
     bp.processData();
-
+    pcl::PointCloud<pcl::PointXYZRGB >::Ptr ccloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::copyPointCloud(*cluster_cloud,*ccloud);
+    
+    for(int i = 0; i < ccloud->points.size();i++)
+    {
+      ccloud->points[i].rgb = this->color_map[counter].rgb;
+    }
     // Check if the cluster satifies the minimum area requirement
-    if (calculateAreaPolygon(bp.converted_points) >= this->minimumArea){
-      bp.saveConvertedPoints("cluster"+std::to_string(counter)+"_edges.ply");
-      //pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_projected.ply",*cloud_projected,false);
-      
-      pcl::PointCloud<pcl::PointXYZRGB >::Ptr ccloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-      pcl::copyPointCloud(*cluster_cloud,*ccloud);
-      
-      for(int i = 0; i < ccloud->points.size();i++)
-      {
-        ccloud->points[i].rgb = this->color_map[counter].rgb;
+    if (calculateAreaPolygon(bp.converted_points) >= this->options.MINIMUM_AREA){
+      if(this->options.SAVE_EDGES_FOR_CLUSTERS_OF_INTEREST){
+        bp.saveConvertedPoints("cluster"+std::to_string(counter)+"_edges.ply");
       }
-      pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_colored.ply",*ccloud,false);
+      if(this->options.SAVE_PROJECTED_CLUSTERS_OF_INTEREST){
+        pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_projected.ply",*cloud_projected,false);
+      }
+      if(this->options.SAVE_CLUSTERS_OF_INTEREST){
+        pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_colored.ply",*ccloud,false);
+      }
       this->filtered_clouds.push_back(ccloud);
     }
     
@@ -134,7 +138,7 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
   std::cout<<"Cluster Projection ... Done"<<std::endl;
 }
 
-Segmentor::Segmentor(std::string filename,float minimumArea,int noiseThreshold, bool debug_mode)
+Segmentor::Segmentor(std::string filename,SegmentorOptions options)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -158,14 +162,13 @@ Segmentor::Segmentor(std::string filename,float minimumArea,int noiseThreshold, 
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::RadiusOutlierRemoval<pcl::PointXYZ> rorfilter(true);
     rorfilter.setInputCloud(cloud);
-    rorfilter.setRadiusSearch(0.1);
-    rorfilter.setMinNeighborsInRadius(noiseThreshold);
+    rorfilter.setRadiusSearch(options.NOISE_RADIUS);
+    rorfilter.setMinNeighborsInRadius(options.NOISE_THRESHOLD);
     rorfilter.setNegative(false);
     rorfilter.filter(*filtered_cloud);
     
     this->cloud = filtered_cloud;
-    this->minimumArea  = minimumArea;
-    this->debug_mode = debug_mode;
+    this->options = options;
 }
 
 pcl::PointCloud <pcl::PointXYZRGB>::Ptr Segmentor::coloredCloud()
@@ -186,7 +189,7 @@ int Segmentor::segment ()
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;
   normal_estimator.setSearchMethod (tree);
   normal_estimator.setInputCloud (this->cloud);
-  normal_estimator.setKSearch (50);
+  normal_estimator.setKSearch (this->options.NORMALS_KSEARCH);
   normal_estimator.compute (*normals);
 
   // pcl::IndicesPtr indices (new std::vector <int>);
@@ -196,15 +199,15 @@ int Segmentor::segment ()
   // pass.setFilterLimits (0.0, 1.0);
   // pass.filter (*indices);
 
-  this->reg.setMinClusterSize (50);
-  this->reg.setMaxClusterSize (1000000);
+  this->reg.setMinClusterSize (this->options.REGIONAL_GROWING_MIN_CLUSTER_SIZE);
+  this->reg.setMaxClusterSize (this->options.REGIONAL_GROWING_MAX_CLUSTER_SIZE);
   this->reg.setSearchMethod (tree);
-  this->reg.setNumberOfNeighbours (30);
+  this->reg.setNumberOfNeighbours (this->options.REGIONAL_GROWING_NUMBER_OF_NEIGHBOURS);
   this->reg.setInputCloud (cloud);
   // this->reg.setIndices(indices);
   this->reg.setInputNormals (normals);
-  this->reg.setSmoothnessThreshold (3.0 / 180.0 * M_PI);
-  this->reg.setCurvatureThreshold (1.0);
+  this->reg.setSmoothnessThreshold (this->options.REGIONAL_GROWING_SMOOTHNESS_THRESHOLD);
+  this->reg.setCurvatureThreshold (this->options.REGIONAL_GROWING_CURVATURE_THRESHOLD);
 
   this->reg.extract (this->clusters);
 
@@ -251,7 +254,7 @@ int Segmentor::segment ()
     seg.setOptimizeCoefficients(true);
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setDistanceThreshold (0.2);
+    seg.setDistanceThreshold (this->options.SAC_DISTANCE_THRESHOLD);
     seg.setInputCloud (cluster_cloud);
     seg.segment (*inliers, *coefficients);
 
