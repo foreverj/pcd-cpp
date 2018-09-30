@@ -55,11 +55,12 @@ int main(int argc, const char** argv)
         int counter = 0;
         while(counter < seg.filtered_clouds.size())
         {
-            pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB>(seg.filtered_clouds[counter]);
+            pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_cluster(seg.filtered_clouds[counter]);
             std::string name = "Cluster ";
-            filtered_viewer->addPointCloud(seg.filtered_clouds[counter],rgb,name + std::to_string(counter));
+            filtered_viewer->addPointCloud(seg.filtered_clouds[counter],rgb_cluster,name + std::to_string(counter));
             counter++;
         }
+
         
 
         while (!viewer->wasStopped ())

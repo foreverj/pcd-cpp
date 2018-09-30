@@ -116,14 +116,17 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
     // Check if the cluster satifies the minimum area requirement
     if (calculateAreaPolygon(bp.converted_points) >= this->minimumArea){
       bp.saveConvertedPoints("cluster"+std::to_string(counter)+"_edges.ply");
-      pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_projected.ply",*cloud_projected,false);
+      //pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_projected.ply",*cloud_projected,false);
+      
       pcl::PointCloud<pcl::PointXYZRGB >::Ptr ccloud (new pcl::PointCloud<pcl::PointXYZRGB>);
       pcl::copyPointCloud(*cluster_cloud,*ccloud);
-      this->filtered_clouds.push_back(ccloud);
+      
       for(int i = 0; i < ccloud->points.size();i++)
       {
         ccloud->points[i].rgb = this->color_map[counter].rgb;
       }
+      pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_colored.ply",*ccloud,false);
+      this->filtered_clouds.push_back(ccloud);
     }
     
     counter++;
@@ -221,9 +224,9 @@ int Segmentor::segment ()
     printProgressBar("Plane Fitting",counter+1,numberOfClusters);
 
     //Get and store color map for the cluster
-    color_map[counter].r = colored_cloud->points[clusters[counter].indices[0]].r;
-    color_map[counter].g = colored_cloud->points[clusters[counter].indices[0]].g;
-    color_map[counter].b = colored_cloud->points[clusters[counter].indices[0]].b;
+    this->color_map[counter].r = colored_cloud->points[clusters[counter].indices[0]].r;
+    this->color_map[counter].g = colored_cloud->points[clusters[counter].indices[0]].g;
+    this->color_map[counter].b = colored_cloud->points[clusters[counter].indices[0]].b;
 
     //Cluster point cloud extraction variables
     pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_cloud (new pcl::PointCloud<pcl::PointXYZ>);

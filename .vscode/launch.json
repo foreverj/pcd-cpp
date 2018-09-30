@@ -22,7 +22,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/thesis",
-            "args": ["region_growing_tutorial.pcd"],
+            "args": ["../Workplace/g6_zeb_downsampled.ply","--minimum_area=2.0","--minimum_number_of_neighbours=5", "--display"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
             "environment": [],
