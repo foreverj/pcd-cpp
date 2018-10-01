@@ -59,6 +59,7 @@ class Segmentor{
         pcl::PointCloud <pcl::PointXYZRGB>::Ptr coloredCloud();
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
         std::vector <pcl::PointCloud<pcl::PointXYZRGB>::Ptr> filtered_clouds;
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr projected_cloud;
         //std::vector <pcl::RGB> filtered_clouds_color_map;
         std::vector <pcl::ModelCoefficients::Ptr> cluster_coefficients;
         std::vector <pcl::PointIndices> clusters;
@@ -68,6 +69,7 @@ class Segmentor{
         void projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr> cluster_coefficients, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,std::vector <pcl::PointIndices> clusters);
         void extractPointCloudsFromCoefficients(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,pcl::PointCloud<pcl::PointXYZ> &cluster_cloud,pcl::PointIndices::Ptr cluster);
         float calculateAreaPolygon(const pcl::PointCloud<pcl::PointXYZ> &polygon);
+        std::vector <pcl::PointCloud<pcl::PointXYZRGB>::Ptr> _projected_clouds;
 };
 
 #endif

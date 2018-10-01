@@ -169,6 +169,10 @@ Segmentor::Segmentor(std::string filename,SegmentorOptions options)
     
     this->cloud = filtered_cloud;
     this->options = options;
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr proj_c (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    this->projected_cloud = proj_c;
 }
 
 pcl::PointCloud <pcl::PointXYZRGB>::Ptr Segmentor::coloredCloud()
@@ -273,6 +277,73 @@ int Segmentor::segment ()
   std::cout<<"Plane Fitting ... Done"<<std::endl;
   
   projectPointsAndSavePly(this->cluster_coefficients,this->cloud,this->clusters);
+
+  pcl::ModelCoefficients::Ptr yzPlaneCoefficients (new pcl::ModelCoefficients());
+
+  // x=0
+  yzPlaneCoefficients->values.resize(4);
+  yzPlaneCoefficients->values[0]=1.0;
+  yzPlaneCoefficients->values[1]=0;
+  yzPlaneCoefficients->values[2]=0;
+  yzPlaneCoefficients->values[3]=0;
+
+  pcl::ModelCoefficients::Ptr xzPlaneCoefficients (new pcl::ModelCoefficients());
+
+  // y=0
+  xzPlaneCoefficients->values.resize(4);
+  xzPlaneCoefficients->values[0]=0;
+  xzPlaneCoefficients->values[1]=1;
+  xzPlaneCoefficients->values[2]=0;
+  xzPlaneCoefficients->values[3]=0;
+
+
+
+  pcl::ProjectInliers<pcl::PointXYZRGB> yz_proj;
+  pcl::ProjectInliers<pcl::PointXYZRGB> xz_proj;
+
+  yz_proj.setModelType(pcl::SACMODEL_PLANE);
+  yz_proj.setModelCoefficients(yzPlaneCoefficients);
+
+  xz_proj.setModelType(pcl::SACMODEL_PLANE);
+  xz_proj.setModelCoefficients(xzPlaneCoefficients);
+
+  
+  counter = 0;
+  int numberOfFilteredClusters = this->filtered_clouds.size();
+
+  this->_projected_clouds.resize(numberOfFilteredClusters);
+
+  pcl::PointCloud<pcl::PointXYZRGB> pc;
+
+  while(counter < numberOfFilteredClusters)
+  {
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr fc = filtered_clouds[counter];
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr yz_pc (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr xz_pc (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    yz_proj.setInputCloud (fc);
+    yz_proj.filter (*yz_pc);
+
+    xz_proj.setInputCloud(yz_pc);
+    xz_proj.filter(*xz_pc);
+
+    pc += *xz_pc;
+    this->_projected_clouds.push_back(xz_pc);
+
+    counter ++;
+  }
+
+  this->projected_cloud->points.resize(pc.points.size());
+
+  for(int j=0;j<pc.points.size();j++)
+  {
+    this->projected_cloud->points[j] = pc.points[j];
+  }
+
+
+
+
+
   
   return clusters.size();
   
