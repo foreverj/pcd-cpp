@@ -1,7 +1,6 @@
 #include "segmentor.hpp"
 #include "docopt/docopt.h"
 #include <iostream>
-#include <thread>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/pcl_plotter.h>
 #include <pcl/point_types.h>
@@ -97,8 +96,8 @@ int main(int argc, const char** argv)
 
     std::cout<<"Finding ceilings and floors ..."<<std::endl;
 
-    std::vector<double> z_critical_values;
-
+    double z_critical_values[10];
+    int z_counter = 0;
     for(int i=0; i<data.size()-1;i++)
     {
         double z_i = data[i].first;
@@ -111,10 +110,37 @@ int main(int argc, const char** argv)
 
         if(criterion > 1.0)
         {
-            z_critical_values.resize(z_critical_values.size()+1);
-            z_critical_values.push_back(z_i1);
+            z_critical_values[z_counter] = z_i1;
+            z_counter++;
+            if (z_counter > 9)
+            {
+                throw("size for critical z is too small");
+            }
             std::cout<<"Z value: "<<z_i1<<std::endl;
         }
+    }
+
+    // Brutal Force Start
+    double floor_z = z_critical_values[0];
+    double ceiling1_z = z_critical_values[2];
+    double ceiling2_z = z_critical_values[3];
+
+    //Iterate over all filtered clusters
+    for(int i=0;i<seg.filtered_clouds.size();i++)
+    {
+        Eigen::Vector4f centroid; 
+        pcl::compute3DCentroid(*seg.filtered_clouds[i],centroid);
+        std::cout<<centroid[2]<<std::endl;
+        if(centroid[2]>=floor_z-step/2 && centroid[2]<=floor_z+step/2)
+        {
+            std::cout<<seg.filtered_clouds[i]->points.size()<<std::endl;
+        }
+
+        if(centroid[2]>=ceiling1_z-step/2 && centroid[2]<=ceiling2_z+step/2)
+        {
+            std::cout<<seg.filtered_clouds[i]->points.size()<<std::endl;
+        }
+
     }
 
     pcl::visualization::PCLPlotter *plotter = new pcl::visualization::PCLPlotter("z histogram");
