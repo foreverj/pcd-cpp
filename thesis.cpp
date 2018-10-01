@@ -46,6 +46,7 @@ int main(int argc, const char** argv)
 
 
     SegmentorOptions opt;
+    opt.DISPLAY_MODE = display_mode;
     opt.DEBUG_MODE = debug_mode;
     opt.MINIMUM_AREA = minimum_area;
     opt.NOISE_THRESHOLD = minimum_number_of_neighbours;

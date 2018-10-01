@@ -26,6 +26,7 @@
 
 struct SegmentorOptions{
     bool DEBUG_MODE = false; // If debug log is enabled.
+    bool DISPLAY_MODE = false;
     bool SAVE_CLUSTERS_OF_INTEREST = true; 
     bool SAVE_PROJECTED_CLUSTERS_OF_INTEREST = true;
     bool SAVE_EDGES_FOR_CLUSTERS_OF_INTEREST = true;

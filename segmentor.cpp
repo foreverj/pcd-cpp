@@ -112,12 +112,16 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
     //Push Data to CGAL Boundary Paramatrization
     BoundaryProcessor bp(*cloud_projected,*cluster_coefficients[counter],this->options.DEBUG_MODE);
     bp.processData();
-    pcl::PointCloud<pcl::PointXYZRGB >::Ptr ccloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr ccloud (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::copyPointCloud(*cluster_cloud,*ccloud);
     
-    for(int i = 0; i < ccloud->points.size();i++)
+
+    if(this->options.DISPLAY_MODE || this->options.SAVE_CLUSTERS_OF_INTEREST)
     {
-      ccloud->points[i].rgb = this->color_map[counter].rgb;
+      for(int i = 0; i < ccloud->points.size();i++)
+      {
+        ccloud->points[i].rgb = this->color_map[counter].rgb;
+      }
     }
     // Check if the cluster satifies the minimum area requirement
     if (calculateAreaPolygon(bp.converted_points) >= this->options.MINIMUM_AREA){
