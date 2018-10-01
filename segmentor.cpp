@@ -191,7 +191,7 @@ int Segmentor::segment ()
 
   int counter = 0;
   
-
+  std::cout<<"Segmentation ..."<<std::endl;
   pcl::search::Search<pcl::PointXYZ>::Ptr tree = boost::shared_ptr<pcl::search::Search<pcl::PointXYZ> > (new pcl::search::KdTree<pcl::PointXYZ>);
   pcl::PointCloud <pcl::Normal>::Ptr normals (new pcl::PointCloud <pcl::Normal>);
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;
@@ -218,7 +218,8 @@ int Segmentor::segment ()
   this->reg.setCurvatureThreshold (this->options.REGIONAL_GROWING_CURVATURE_THRESHOLD);
 
   this->reg.extract (this->clusters);
-
+  std::cout<<"Segmentation ... Done"<<std::endl;
+  
   //Fit plane equations to each cluster using RANSAC
   counter = 0;
 

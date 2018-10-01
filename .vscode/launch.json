@@ -22,7 +22,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/thesis",
-            "args": ["../Workplace/g6_zeb_downsampled.ply","--minimum_area=2.0","--minimum_number_of_neighbours=5", "--display"],
+            "args": ["../Workplace/g6_zeb_downsampled.ply","--minimum_area=2.0","--minimum_number_of_neighbours=5"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
             "environment": [],

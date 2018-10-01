@@ -1,6 +1,7 @@
 #include "segmentor.hpp"
 #include "docopt/docopt.h"
 #include <iostream>
+#include <thread>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/pcl_plotter.h>
 #include <pcl/point_types.h>
@@ -90,6 +91,30 @@ int main(int argc, const char** argv)
         p.z=z;
         int density = octree.getVoxelDensityAtPoint(p);
         data.push_back(std::make_pair(z,density));
+    }
+
+    std::cout<<"Done"<<std::endl;
+
+    std::cout<<"Finding ceilings and floors ..."<<std::endl;
+
+    std::vector<double> z_critical_values;
+
+    for(int i=0; i<data.size()-1;i++)
+    {
+        double z_i = data[i].first;
+        double d_i = data[i].second;
+
+        double z_i1 = data[i+1].first;
+        double d_i1 = data[i+1].second;
+
+        double criterion = abs(d_i-d_i1)/d_i;
+
+        if(criterion > 1.0)
+        {
+            z_critical_values.resize(z_critical_values.size()+1);
+            z_critical_values.push_back(z_i1);
+            std::cout<<"Z value: "<<z_i1<<std::endl;
+        }
     }
 
     pcl::visualization::PCLPlotter *plotter = new pcl::visualization::PCLPlotter("z histogram");
