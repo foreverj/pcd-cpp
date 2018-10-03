@@ -1,6 +1,6 @@
 #include "segmentor.hpp"
 #include "boundary.hpp"
-
+#include <chrono>
 
 float Segmentor::calculateAreaPolygon(const pcl::PointCloud<pcl::PointXYZ> &polygon)
 {
@@ -67,6 +67,7 @@ void saveCoefficients(std::string filename,std::vector <pcl::ModelCoefficients::
 
   int counter=0;
   const int numberOfClusters = cluster_coefficients.size();
+  auto start = std::chrono::steady_clock::now();
   while(counter<numberOfClusters)
   {
     printProgressBar("Cluster Coefficients",counter+1,numberOfClusters);
@@ -77,7 +78,9 @@ void saveCoefficients(std::string filename,std::vector <pcl::ModelCoefficients::
                 <<cluster_coefficients[counter]->values[3]<<"\n";
     counter++;
   }
-  std::cout<<"Cluster Coefficients ... Done"<<std::endl;
+  auto end = std::chrono::steady_clock::now();
+  auto diff = end - start;
+  std::cout<<"Cluster Coefficients ... Done "<<std::chrono::duration<double,std::milli>(diff).count()<<" ms"<<std::endl;
   out.close();
 }
 
@@ -85,6 +88,7 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
 {
   int counter=0;
   const int numberOfClusters = cluster_coefficients.size();
+  auto start = std::chrono::steady_clock::now();
   while(counter<numberOfClusters)
   {
     printProgressBar("Cluster Projection",counter+1,numberOfClusters);
@@ -142,11 +146,16 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
     
     counter++;
   }
-  std::cout<<"Cluster Projection ... Done"<<std::endl;
+  auto end = std::chrono::steady_clock::now();
+  auto diff = end - start;
+
+  std::cout<<"Cluster Projection ... Done "<<std::chrono::duration<double,std::milli>(diff).count()<<" ms"<<std::endl;
 }
 
 Segmentor::Segmentor(std::string filename,SegmentorOptions options)
 {
+
+    auto start = std::chrono::steady_clock::now();
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
     std::string extension = filename.substr(filename.find_last_of(".") + 1);
@@ -164,7 +173,10 @@ Segmentor::Segmentor(std::string filename,SegmentorOptions options)
     } else{
       throw std::invalid_argument( "File format not supported" );
     }
+    auto end = std::chrono::steady_clock::now();
 
+    auto diff = end - start;
+    std::cout<<"Reading Point Cloud ... Done "<<std::chrono::duration<double,std::milli>(diff).count()<<" ms"<<std::endl;
     // Noise Removal
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::RadiusOutlierRemoval<pcl::PointXYZ> rorfilter(true);
@@ -193,7 +205,7 @@ int Segmentor::segment ()
 {
 
   int counter = 0;
-  
+  auto start = std::chrono::steady_clock::now();
   std::cout<<"Segmentation ..."<<std::endl;
   pcl::search::Search<pcl::PointXYZ>::Ptr tree = boost::shared_ptr<pcl::search::Search<pcl::PointXYZ> > (new pcl::search::KdTree<pcl::PointXYZ>);
   pcl::PointCloud <pcl::Normal>::Ptr normals (new pcl::PointCloud <pcl::Normal>);
@@ -221,7 +233,10 @@ int Segmentor::segment ()
   this->reg.setCurvatureThreshold (this->options.REGIONAL_GROWING_CURVATURE_THRESHOLD);
 
   this->reg.extract (this->clusters);
-  std::cout<<"Segmentation ... Done"<<std::endl;
+  
+  auto end = std::chrono::steady_clock::now();
+  auto diff = end - start;
+  std::cout<<"Segmentation ... Done "<<std::chrono::duration<double,std::milli>(diff).count()<<" ms"<<std::endl;
   
   //Fit plane equations to each cluster using RANSAC
   counter = 0;
@@ -231,7 +246,7 @@ int Segmentor::segment ()
 
   pcl::PointCloud <pcl::PointXYZRGB>::Ptr colored_cloud = this->reg.getColoredCloud ();
 
-
+  start = std::chrono::steady_clock::now();
   int numberOfClusters = clusters.size();
   while(counter<numberOfClusters)
   {
@@ -282,7 +297,9 @@ int Segmentor::segment ()
 
     counter++;
   }
-  std::cout<<"Plane Fitting ... Done"<<std::endl;
+  end = std::chrono::steady_clock::now();
+  diff = end -start;
+  std::cout<<"Plane Fitting ... Done "<<std::chrono::duration<double,std::milli>(diff).count()<<" ms"<<std::endl;
   
   projectPointsAndSavePly(this->cluster_coefficients,this->cloud,this->clusters);
 

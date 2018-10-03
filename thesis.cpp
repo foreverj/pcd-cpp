@@ -2,6 +2,8 @@
 #include "docopt/docopt.h"
 #include "boundary.hpp"
 #include <iostream>
+#include <chrono>
+
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/pcl_plotter.h>
 #include <pcl/point_types.h>
@@ -30,6 +32,7 @@ R"(Thesis
 
 int main(int argc, const char** argv)
 {
+    auto total_start = std::chrono::steady_clock::now();
    std::map<std::string, docopt::value> args = docopt::docopt(USAGE, 
                                                   { argv + 1, argv + argc },
                                                   true,               // show help if requested
@@ -59,6 +62,7 @@ int main(int argc, const char** argv)
     int numOfClusters = seg.segment();
 
     // Concatenate projected clouds
+    auto start = std::chrono::steady_clock::now();
     std::cout<<"Generating z-value histogram"<<std::endl;
     pcl::octree::OctreePointCloudDensity<pcl::PointXYZRGB> octree(0.1f);
     octree.setInputCloud(seg.projected_cloud);
@@ -93,8 +97,12 @@ int main(int argc, const char** argv)
         data.push_back(std::make_pair(z,density));
     }
 
-    std::cout<<"Done"<<std::endl;
+    auto end = std::chrono::steady_clock::now();
+    auto diff = end - start;
 
+    std::cout<<"Done "<<std::chrono::duration <double, std::milli> (diff).count() << " ms"<<std::endl;
+
+    start = std::chrono::steady_clock::now();
     std::cout<<"Finding ceilings and floors ..."<<std::endl;
 
     double z_critical_values[10];
@@ -189,14 +197,22 @@ int main(int argc, const char** argv)
     bp.processData();
     pcl::io::savePLYFile("contour_edges.ply",bp.converted_points,false);
 
-    pcl::visualization::PCLPlotter *plotter = new pcl::visualization::PCLPlotter("z histogram");
-    plotter->addPlotData(data);
-    plotter->plot();
+    end = std::chrono::steady_clock::now();
+    diff = end - start;
+    auto total_diff = end - total_start;
+    std::cout<<"Done "<<std::chrono::duration <double, std::milli> (diff).count() << " ms"<<std::endl;
+    std::cout<<"Total execution time "<<std::chrono::duration <double, std::milli> (total_diff).count() << " ms"<<std::endl;
 
-    std::cout<<"Done"<<std::endl;
+   
 
     if (display_mode)
     {
+        // Plot z-value histogram
+        pcl::visualization::PCLPlotter *plotter = new pcl::visualization::PCLPlotter("z histogram");
+        plotter->addPlotData(data);
+        plotter->plot();
+
+        // Plot point clouds
         boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("Cluster viewer"));
         pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(seg.coloredCloud()); 
         viewer->setBackgroundColor (0,0,0);
