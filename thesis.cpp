@@ -1,5 +1,6 @@
 #include "segmentor.hpp"
 #include "docopt/docopt.h"
+#include "boundary.hpp"
 #include <iostream>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/pcl_plotter.h>
@@ -51,7 +52,7 @@ int main(int argc, const char** argv)
     opt.MINIMUM_AREA = minimum_area;
     opt.NOISE_THRESHOLD = minimum_number_of_neighbours;
     opt.SAVE_CLUSTERS_OF_INTEREST = false;
-    opt.SAVE_EDGES_FOR_CLUSTERS_OF_INTEREST = false;
+    opt.SAVE_EDGES_FOR_CLUSTERS_OF_INTEREST = true;
     opt.SAVE_PROJECTED_CLUSTERS_OF_INTEREST = false;
 
     Segmentor seg(filename,opt);
@@ -125,6 +126,8 @@ int main(int argc, const char** argv)
     double ceiling1_z = z_critical_values[2];
     double ceiling2_z = z_critical_values[3];
 
+    pcl::PointCloud<pcl::PointXYZRGB> contourCloud;
+
     //Iterate over all filtered clusters
     for(int i=0;i<seg.filtered_clouds.size();i++)
     {
@@ -134,14 +137,57 @@ int main(int argc, const char** argv)
         if(centroid[2]>=floor_z-step/2 && centroid[2]<=floor_z+step/2)
         {
             std::cout<<seg.filtered_clouds[i]->points.size()<<std::endl;
+            pcl::io::savePLYFile("floor_"+std::to_string(i)+"_edges.ply",*seg.filtered_clouds[i],false);
+            contourCloud += *seg.filtered_clouds[i];
         }
 
         if(centroid[2]>=ceiling1_z-step/2 && centroid[2]<=ceiling2_z+step/2)
         {
             std::cout<<seg.filtered_clouds[i]->points.size()<<std::endl;
+            pcl::io::savePLYFile("ceiling_"+std::to_string(i)+"_edges.ply",*seg.filtered_clouds[i],false);
+            contourCloud += *seg.filtered_clouds[i];
         }
-
     }
+
+    // z=0
+    pcl::ModelCoefficients::Ptr xyPlaneCoefficients (new pcl::ModelCoefficients());
+    xyPlaneCoefficients->values.resize(4);
+    xyPlaneCoefficients->values[0]=0;
+    xyPlaneCoefficients->values[1]=0;
+    xyPlaneCoefficients->values[2]=1.0;
+    xyPlaneCoefficients->values[3]=0.0-floor_z;
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr xy_pc (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr contourCloud_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    contourCloud_ptr->points.resize(contourCloud.points.size());
+    for(size_t i=0;i<contourCloud.points.size();i++)
+    {
+        contourCloud_ptr->points[i].x = contourCloud.points[i].x;
+        contourCloud_ptr->points[i].y = contourCloud.points[i].y;
+        contourCloud_ptr->points[i].z = contourCloud.points[i].z;
+    }
+
+
+    pcl::ProjectInliers<pcl::PointXYZRGB> xy_proj;
+    xy_proj.setModelType(pcl::SACMODEL_PLANE);
+    xy_proj.setModelCoefficients(xyPlaneCoefficients);
+    xy_proj.setInputCloud (contourCloud_ptr);
+    xy_proj.filter (*xy_pc);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr xy_pc_xyz (new pcl::PointCloud<pcl::PointXYZ>);
+
+    xy_pc_xyz->points.resize(xy_pc->points.size());
+    for (size_t i = 0; i < xy_pc->points.size(); i++) {
+        xy_pc_xyz->points[i].x = xy_pc->points[i].x;
+        xy_pc_xyz->points[i].y = xy_pc->points[i].y;
+        xy_pc_xyz->points[i].z = xy_pc->points[i].z;
+    }
+
+    pcl::io::savePLYFile("contour_points.ply",*xy_pc_xyz,false);
+
+    BoundaryProcessor bp(*xy_pc_xyz,*xyPlaneCoefficients,debug_mode);
+    bp.processData();
+    pcl::io::savePLYFile("contour_edges.ply",bp.converted_points,false);
 
     pcl::visualization::PCLPlotter *plotter = new pcl::visualization::PCLPlotter("z histogram");
     plotter->addPlotData(data);

@@ -134,6 +134,9 @@ void Segmentor::projectPointsAndSavePly(std::vector <pcl::ModelCoefficients::Ptr
       if(this->options.SAVE_CLUSTERS_OF_INTEREST){
         pcl::io::savePLYFile("data/cluster"+std::to_string(counter)+"_colored.ply",*ccloud,false);
       }
+      pcl::PointCloud<pcl::PointXYZ>::Ptr egcloud (new pcl::PointCloud<pcl::PointXYZ>);
+      pcl::copyPointCloud(bp.converted_points,*egcloud);
+      this->filtered_edges.push_back(egcloud);
       this->filtered_clouds.push_back(ccloud);
     }
     

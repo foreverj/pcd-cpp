@@ -143,10 +143,11 @@ bool BoundaryProcessor::pointCloudInput(pcl::PointCloud<pcl::PointXYZ> cloud_pro
 
 void BoundaryProcessor::alpha_compute_output(std::list<Point> points)
 {
-    Alpha_shape_2 A(points.begin(),points.end(),FT(10000),Alpha_shape_2::GENERAL);
+    Alpha_shape_2 A(points.begin(),points.end(),FT(1),Alpha_shape_2::GENERAL);
 
     Alpha_shape_2::Alpha_iterator opt = A.find_optimal_alpha(1);
     A.set_alpha(*opt);
+    
 
     std::vector<Segment> segments;
     alpha_edges(A,std::back_inserter(segments));
@@ -217,9 +218,21 @@ BoundaryProcessor::BoundaryProcessor(pcl::PointCloud<pcl::PointXYZ> cloud_projec
 
     //assume X' axis always has y=0
     pcl::PointXYZ x_prime;
-    x_prime.z = sqrt(1.0/((z_prime.z)/(z_prime.x)*(z_prime.z)/(z_prime.x)+1.0));
-    x_prime.y = 0;
-    x_prime.x = -z_prime.z/z_prime.x*x_prime.z;
+    if(z_prime.x != 0)
+    {
+        x_prime.z = sqrt(1.0/((z_prime.z)/(z_prime.x)*(z_prime.z)/(z_prime.x)+1.0));
+        x_prime.y = 0;
+        x_prime.x = -z_prime.z/z_prime.x*x_prime.z;
+    }else if(z_prime.y !=0){
+        x_prime.z = sqrt(1.0/((z_prime.z)/(z_prime.y)*(z_prime.z)/(z_prime.y)+1.0));
+        x_prime.y = -z_prime.z/z_prime.y*x_prime.z;
+        x_prime.x = 0;
+    }else{
+        x_prime.z = 0;
+        x_prime.y = 0;
+        x_prime.x = 1;
+    }
+    
 
     // Y' axis = Z' cross X'
     pcl::PointXYZ y_prime;

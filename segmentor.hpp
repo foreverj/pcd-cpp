@@ -60,6 +60,7 @@ class Segmentor{
         pcl::PointCloud <pcl::PointXYZRGB>::Ptr coloredCloud();
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
         std::vector <pcl::PointCloud<pcl::PointXYZRGB>::Ptr> filtered_clouds;
+        std::vector <pcl::PointCloud<pcl::PointXYZ>::Ptr> filtered_edges;
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr projected_cloud;
         //std::vector <pcl::RGB> filtered_clouds_color_map;
         std::vector <pcl::ModelCoefficients::Ptr> cluster_coefficients;
